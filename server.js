@@ -3,7 +3,6 @@ const express = require('express');
 const sequelize = require('./config/dbconfig'); // Importando a configuração do banco de dados
 const passport = require('./config/passport'); // Importando a configuração do Passport
 const session = require('express-session');
-const authRoutes = require('./src/routes/authRoutes'); // Importando as rotas de autenticação
 
 const app = express();
 const PORT = 3000;
@@ -19,6 +18,8 @@ const userRoutes = require('./src/routes/UserRouter');
 const barberRoutes = require('./src/routes/BarberRouter');
 const servicoRoutes = require('./src/routes/ServicoRouter');
 const agendaRoutes = require('./src/routes/AgendaRouter');
+const graficoRoutes = require('./src/routes/GraficoRouter'); // Importando as rotas de gráficos
+const authRoutes = require('./src/routes/authRoutes'); // Importando as rotas de autenticação
 
 // Usar as rotas
 app.use('/api', shopRoutes);
@@ -26,6 +27,7 @@ app.use('/api', userRoutes);
 app.use('/api', barberRoutes);
 app.use('/api', servicoRoutes);
 app.use('/api', agendaRoutes);
+app.use('/api', graficoRoutes); // Usar as rotas de gráficos
 app.use('/', authRoutes); // Usar as rotas de autenticação
 
 // Testando a conexão com o banco de dados e iniciando o servidor
