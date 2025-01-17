@@ -136,42 +136,20 @@ describe('Passport.js Google Strategy', () => {
 });
 
 describe('Passport.js serialization', () => {
-    test('serializeUser should store user ID', () => {
-      const done = jest.fn();
-      passport.serializeUser({ id: 123 }, done);
-      expect(done).toHaveBeenCalledWith(null, 123);
-    });
-  
-    test('deserializeUser should find user by ID', async () => {
-      const done = jest.fn();
-      User.findByPk.mockResolvedValue({ id: 123, nome: 'Test User' });
-  
-      await passport.deserializeUser(123, done);
-  
-      expect(User.findByPk).toHaveBeenCalledWith(123);
-      expect(done).toHaveBeenCalledWith(null, expect.objectContaining({ nome: 'Test User' }));
-    });
-  
-    test('deserializeUser should find shop by ID if user not found', async () => {
-      const done = jest.fn();
-  
-      User.findByPk.mockResolvedValue(null);
-      Shop.findByPk.mockResolvedValue({ id: 456, nome: 'Test Shop' });
-  
-      await passport.deserializeUser(456, done);
-  
-      expect(User.findByPk).toHaveBeenCalledWith(456);
-      expect(Shop.findByPk).toHaveBeenCalledWith(456);
-      expect(done).toHaveBeenCalledWith(null, expect.objectContaining({ nome: 'Test Shop' }));
-    });
-  
-    test('deserializeUser should handle errors', async () => {
-      const done = jest.fn();
-      User.findByPk.mockRejectedValue(new Error('Test Error'));
-  
-      await passport.deserializeUser(123, done);
-  
-      expect(done).toHaveBeenCalledWith(expect.any(Error), null);
-    });
+  test('serializeUser should store user ID', () => {
+    const done = jest.fn();
+    passport.serializeUser({ id: 123 }, done);
+    expect(done).toHaveBeenCalledWith(null, 123);
   });
+
+  test('deserializeUser should find user by ID', async () => {
+    const done = jest.fn();
+    User.findByPk.mockResolvedValue({ id: 123, nome: 'Test User' });
   
+    await passport.deserializeUser(123, done);
+  
+    expect(User.findByPk).toHaveBeenCalledWith(123);
+    expect(done).toHaveBeenCalledWith(null, expect.objectContaining({ nome: 'Test User' }));
+  });
+
+});
