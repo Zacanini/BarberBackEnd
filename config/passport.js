@@ -14,6 +14,10 @@ async (req, accessToken, refreshToken, profile, done) => {
     const role = state.role;
     let user;
 
+    if (!['user', 'shop'].includes(role)) {
+      return done(new Error('Invalid role provided'), false);
+    }
+    
     if (role === 'shop') {
       // Verificar se o estabelecimento já existe no banco de dados
       user = await Shop.findOne({ where: { oauthId: profile.id } });
@@ -22,8 +26,8 @@ async (req, accessToken, refreshToken, profile, done) => {
         user = await Shop.create({
           oauthId: profile.id,
           nome: profile.displayName,
-          email: profile.emails[0].value,
-          img: profile.photos[0].value,
+          email: profile.emails?.[0]?.value || '', // Verificar se o email existe
+          img: profile.photos?.[0]?.value || '', // Verificar se a imagem existe
           numeroDeFuncionarios: 0, // Inicialmente 0, pode ser atualizado posteriormente
           horaAbertura: '09:00:00', // Valores padrão, podem ser atualizados posteriormente
           horaDeFechamento: '18:00:00'
@@ -56,13 +60,20 @@ passport.serializeUser((user, done) => {
 passport.deserializeUser(async (id, done) => {
   try {
     let user = await User.findByPk(id);
-    if (!user) {
-      user = await Shop.findByPk(id);
+    if (user) {
+      return done(null, user);
     }
-    done(null, user);
-  } catch (error) {
-    done(error, null);
+
+    const shop = await Shop.findByPk(id);
+    if (shop) {
+      return done(null, shop);
+    }
+
+    return done(null, null); // Nenhum usuário ou estabelecimento encontrado
+  } catch (err) {
+    return done(err);
   }
 });
+
 
 module.exports = passport;
