@@ -32,9 +32,9 @@ const {
     });
   
     test('criarUser - should create a user and return it', async () => {
-      const req = mockReq({}, { nome: 'João', email: 'joao@example.com' });
+      const req = mockReq({}, { nome: 'João', email: 'joao@example.com', whatsapp: '1234567890' });
       const res = mockRes();
-      const mockData = { id: 1, nome: 'João', email: 'joao@example.com' };
+      const mockData = { id: 1, nome: 'João', email: 'joao@example.com', whatsapp: '1234567890' };
   
       userService.createUser.mockResolvedValue(mockData);
   
@@ -48,7 +48,7 @@ const {
     test('listarUsers - should return all users', async () => {
       const req = mockReq();
       const res = mockRes();
-      const mockData = [{ id: 1, nome: 'João', email: 'joao@example.com' }];
+      const mockData = [{ id: 1, nome: 'João', email: 'joao@example.com', whatsapp: '1234567890' }];
   
       userService.getAllUsers.mockResolvedValue(mockData);
   
@@ -62,7 +62,7 @@ const {
     test('obterUserPorId - should return a user by ID', async () => {
       const req = mockReq({ id: '1' });
       const res = mockRes();
-      const mockData = { id: 1, nome: 'João', email: 'joao@example.com' };
+      const mockData = { id: 1, nome: 'João', email: 'joao@example.com', whatsapp: '1234567890' };
   
       userService.getUserById.mockResolvedValue(mockData);
   
@@ -87,9 +87,9 @@ const {
     });
   
     test('atualizarUser - should update a user and return it', async () => {
-      const req = mockReq({ id: '1' }, { nome: 'Carlos', email: 'carlos@example.com' });
+      const req = mockReq({ id: '1' }, { nome: 'Carlos', email: 'carlos@example.com', whatsapp: '0987654321' });
       const res = mockRes();
-      const mockData = { id: 1, nome: 'Carlos', email: 'carlos@example.com' };
+      const mockData = { id: 1, nome: 'Carlos', email: 'carlos@example.com', whatsapp: '0987654321' };
   
       userService.updateUser.mockResolvedValue(mockData);
   
@@ -154,4 +154,3 @@ const {
   
     // Similar error handling tests can be added for other functions if needed.
   });
-  

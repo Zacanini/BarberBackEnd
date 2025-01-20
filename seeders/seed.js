@@ -12,6 +12,7 @@ async function seed() {
     // Adicionar dados na tabela Shop
     const shop1 = await Shop.create({
       nome: 'Barbearia Central',
+      whatsapp: '',
       numeroDeFuncionarios: 5,
       horaAbertura: '09:00:00',
       horaDeFechamento: '18:00:00'
@@ -22,7 +23,8 @@ async function seed() {
       oauthId: 'oauth123',
       nome: 'João Silva',
       email: 'joao.silva@example.com',
-      img: 'https://example.com/img/joao.jpg'
+      img: 'https://example.com/img/joao.jpg',
+      whatsapp: ''
     });
 
     // Adicionar dados na tabela Barber
@@ -30,6 +32,7 @@ async function seed() {
       nome: 'Carlos Souza',
       idShop: shop1.id,
       oauthId: 'oauth456',
+      whatsapp: '',
       tipoBarber: 'gerente'
     });
 

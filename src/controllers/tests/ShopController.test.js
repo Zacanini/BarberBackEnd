@@ -33,9 +33,9 @@ const {
     });
   
     test('criarShop - should create a shop and return it', async () => {
-      const req = mockReq({}, { nome: 'Barbearia Elite', endereco: 'Rua A, 123' });
+      const req = mockReq({}, { nome: 'Barbearia Elite', endereco: 'Rua A, 123', whatsapp: '1234567890' });
       const res = mockRes();
-      const mockData = { id: 1, nome: 'Barbearia Elite', endereco: 'Rua A, 123' };
+      const mockData = { id: 1, nome: 'Barbearia Elite', endereco: 'Rua A, 123', whatsapp: '1234567890' };
   
       shopService.createShop.mockResolvedValue(mockData);
   
@@ -49,7 +49,7 @@ const {
     test('listarShops - should return all shops', async () => {
       const req = mockReq();
       const res = mockRes();
-      const mockData = [{ id: 1, nome: 'Barbearia Elite', endereco: 'Rua A, 123' }];
+      const mockData = [{ id: 1, nome: 'Barbearia Elite', endereco: 'Rua A, 123', whatsapp: '1234567890' }];
   
       shopService.getAllShops.mockResolvedValue(mockData);
   
@@ -63,7 +63,7 @@ const {
     test('obterShopPorId - should return a shop by ID', async () => {
       const req = mockReq({ id: '1' });
       const res = mockRes();
-      const mockData = { id: 1, nome: 'Barbearia Elite', endereco: 'Rua A, 123' };
+      const mockData = { id: 1, nome: 'Barbearia Elite', endereco: 'Rua A, 123', whatsapp: '1234567890' };
   
       shopService.getShopById.mockResolvedValue(mockData);
   
@@ -88,9 +88,9 @@ const {
     });
   
     test('atualizarShop - should update a shop and return it', async () => {
-      const req = mockReq({ id: '1' }, { nome: 'Barbearia Nova', endereco: 'Rua B, 456' });
+      const req = mockReq({ id: '1' }, { nome: 'Barbearia Nova', endereco: 'Rua B, 456', whatsapp: '0987654321' });
       const res = mockRes();
-      const mockData = { id: 1, nome: 'Barbearia Nova', endereco: 'Rua B, 456' };
+      const mockData = { id: 1, nome: 'Barbearia Nova', endereco: 'Rua B, 456', whatsapp: '0987654321' };
   
       shopService.updateShop.mockResolvedValue(mockData);
   
@@ -155,4 +155,3 @@ const {
   
     // Similar error handling tests can be added for other functions if needed.
   });
-  

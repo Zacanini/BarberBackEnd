@@ -17,7 +17,7 @@ describe('BarberController', () => {
 
   describe('criarBarber', () => {
     it('deve criar um barbeiro e retornar status 201', async () => {
-      const barber = { id: 1, nome: 'Barbeiro Teste' };
+      const barber = { id: 1, nome: 'Barbeiro Teste', whatsapp: '1234567890' };
       barberService.createBarber.mockResolvedValue(barber);
 
       await barberController.criarBarber(req, res);
@@ -39,7 +39,7 @@ describe('BarberController', () => {
 
   describe('listarBarbers', () => {
     it('deve listar todos os barbeiros e retornar status 200', async () => {
-      const barbers = [{ id: 1, nome: 'Barbeiro Teste' }];
+      const barbers = [{ id: 1, nome: 'Barbeiro Teste', whatsapp: '1234567890' }];
       barberService.getAllBarbers.mockResolvedValue(barbers);
 
       await barberController.listarBarbers(req, res);
@@ -61,7 +61,7 @@ describe('BarberController', () => {
 
   describe('obterBarberPorId', () => {
     it('deve obter um barbeiro por id e retornar status 200', async () => {
-      const barber = { id: 1, nome: 'Barbeiro Teste' };
+      const barber = { id: 1, nome: 'Barbeiro Teste', whatsapp: '1234567890' };
       req.params.id = 1;
       barberService.getBarberById.mockResolvedValue(barber);
 
@@ -95,9 +95,9 @@ describe('BarberController', () => {
 
   describe('atualizarBarber', () => {
     it('deve atualizar um barbeiro e retornar status 200', async () => {
-      const barber = { id: 1, nome: 'Barbeiro Atualizado' };
+      const barber = { id: 1, nome: 'Barbeiro Atualizado', whatsapp: '0987654321' };
       req.params.id = 1;
-      req.body = { nome: 'Barbeiro Atualizado' };
+      req.body = { nome: 'Barbeiro Atualizado', whatsapp: '0987654321' };
       barberService.updateBarber.mockResolvedValue(barber);
 
       await barberController.atualizarBarber(req, res);

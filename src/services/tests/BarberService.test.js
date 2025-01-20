@@ -33,10 +33,6 @@ describe('BarberService', () => {
     });
   });
 
-  describe('getAllBarbers', () => {
-    // Testes já presentes
-  });
-
   describe('getBarberById', () => {
     it('should return the barber by id', async () => {
       const barber = { id: 1, name: 'Test Barber' };
