@@ -30,7 +30,8 @@ async (req, accessToken, refreshToken, profile, done) => {
           img: profile.photos?.[0]?.value || '', // Verificar se a imagem existe
           numeroDeFuncionarios: 0, // Inicialmente 0, pode ser atualizado posteriormente
           horaAbertura: '09:00:00', // Valores padrão, podem ser atualizados posteriormente
-          horaDeFechamento: '18:00:00'
+          horaDeFechamento: '18:00:00',
+          whatsapp: '' // Adicionar o campo de WhatsApp
         });
       }
     } else {
@@ -41,8 +42,9 @@ async (req, accessToken, refreshToken, profile, done) => {
         user = await User.create({
           oauthId: profile.id,
           nome: profile.displayName,
-          email: profile.emails[0].value,
-          img: profile.photos[0].value
+          email: profile.emails?.[0]?.value || '', // Verificar se o email existe
+          img: profile.photos?.[0]?.value || '', // Verificar se a imagem existe
+          whatsapp: '' // Adicionar o campo de WhatsApp
         });
       }
     }
@@ -74,6 +76,5 @@ passport.deserializeUser(async (id, done) => {
     return done(err);
   }
 });
-
 
 module.exports = passport;
