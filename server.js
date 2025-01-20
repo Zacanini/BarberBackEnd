@@ -30,6 +30,20 @@ app.use('/api', agendaRoutes);
 app.use('/api', graficoRoutes); // Usar as rotas de gráficos
 app.use('/', authRoutes); // Usar as rotas de autenticação
 
+// Função para testar a conexão com o banco de dados
+function testDatabaseConnection() {
+    sequelize.authenticate()
+        .then(() => {
+            console.log('Conexão com o banco de dados bem-sucedida! O banco permanece ativo.');
+        })
+        .catch(err => {
+            console.error('Erro ao conectar ao banco de dados:', err);
+        });
+}
+
+// Testar a conexão com o banco de dados a cada 5 minutos (300000 milissegundos)
+setInterval(testDatabaseConnection, 300000);
+
 // Testando a conexão com o banco de dados e iniciando o servidor
 sequelize.authenticate()
     .then(() => {

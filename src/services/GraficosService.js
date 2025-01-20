@@ -1,4 +1,5 @@
 const { Agenda, Servico } = require('../../models');
+const { Op, Sequelize } = require('sequelize');
 
 const buscarAgendasPorBarberEMes = async (idBarber, mes) => {
   return await Agenda.findAll({
