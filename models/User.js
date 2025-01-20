@@ -21,6 +21,9 @@ module.exports = (sequelize, DataTypes) => {
       },
       img: {
         type: DataTypes.TEXT
+      },
+      whatsapp: {
+        type: DataTypes.STRING // Adicionando a coluna whatsapp
       }
     }, {});
     User.associate = function(models) {

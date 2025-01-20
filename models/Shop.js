@@ -24,6 +24,9 @@ module.exports = (sequelize, DataTypes) => {
     horaDeFechamento: {
       type: DataTypes.TIME,
       allowNull: false
+    },
+    whatsapp: {
+      type: DataTypes.STRING // Adicionando a coluna whatsapp
     }
   }, {});
   Shop.associate = function(models) {
