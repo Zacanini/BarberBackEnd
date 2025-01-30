@@ -20,6 +20,7 @@ const servicoRoutes = require('./src/routes/ServicoRouter');
 const agendaRoutes = require('./src/routes/AgendaRouter');
 const graficoRoutes = require('./src/routes/GraficoRouter'); // Importando as rotas de gráficos
 const authRoutes = require('./src/routes/authRoutes'); // Importando as rotas de autenticação
+const paymentRoutes = require('./src/routes/PaymentRouter'); // Importando as rotas de pagamentos
 
 // Usar as rotas
 app.use('/api', shopRoutes);
@@ -28,13 +29,14 @@ app.use('/api', barberRoutes);
 app.use('/api', servicoRoutes);
 app.use('/api', agendaRoutes);
 app.use('/api', graficoRoutes); // Usar as rotas de gráficos
+app.use('/api', paymentRoutes); // Usar as rotas de pagamentos
 app.use('/', authRoutes); // Usar as rotas de autenticação
 
 // Função para testar a conexão com o banco de dados
 function testDatabaseConnection() {
     sequelize.authenticate()
         .then(() => {
-            console.log('Conexão com o banco de dados bem-sucedida! O banco permanece ativo.');
+            console.log(`Conexão com o banco de dados bem-sucedida! O banco permanece ativo. horario: ${new Date().toLocaleString()}`);
         })
         .catch(err => {
             console.error('Erro ao conectar ao banco de dados:', err);
@@ -47,7 +49,7 @@ setInterval(testDatabaseConnection, 300000);
 // Testando a conexão com o banco de dados e iniciando o servidor
 sequelize.authenticate()
     .then(() => {
-        console.log('Conexão com o banco de dados bem-sucedida!');
+        console.log(`Conexão com o banco de dados bem-sucedida! horario: ${new Date().toLocaleString()}`);
         app.listen(PORT, () => {
             console.log(`Servidor rodando no localhost:${PORT}`);
         });

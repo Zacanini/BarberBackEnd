@@ -26,7 +26,31 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false
     },
     whatsapp: {
-      type: DataTypes.STRING // Adicionando a coluna whatsapp
+      type: DataTypes.STRING
+    },
+    subscription_status: {
+      type: DataTypes.ENUM('active', 'inactive', 'canceled', 'trial'),
+      defaultValue: 'inactive'
+    },
+    subscription_plan: {
+      type: DataTypes.ENUM('basic', 'premium', 'enterprise'),
+      defaultValue: null
+    },
+    subscription_start_date: {
+      type: DataTypes.DATE,
+      defaultValue: null
+    },
+    subscription_end_date: {
+      type: DataTypes.DATE,
+      defaultValue: null
+    },
+    mp_subscription_id: {
+      type: DataTypes.STRING,
+      defaultValue: null
+    },
+    trial_end_date: {
+      type: DataTypes.DATE,
+      defaultValue: null
     }
   }, {});
   Shop.associate = function(models) {
