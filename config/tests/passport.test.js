@@ -1,10 +1,10 @@
+// passport.test.js
 process.env.GOOGLE_CLIENT_ID = 'test-client-id';
 process.env.GOOGLE_CLIENT_SECRET = 'test-client-secret';
 
 const passport = require('../passport');
 const { User, Shop } = require('../../models');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
-const SequelizeMock = require('sequelize-mock');
 
 jest.mock('../../models', () => {
   const SequelizeMock = require('sequelize-mock');
@@ -16,7 +16,7 @@ jest.mock('../../models', () => {
       nome: 'Test User',
       email: 'user@test.com',
       img: 'http://example.com/photo.jpg',
-      whatsapp: '1234567890' // Adicionando o campo whatsapp
+      whatsapp: '1234567890'
     }),
     Shop: dbMock.define('Shop', {
       id: 2,
@@ -27,19 +27,17 @@ jest.mock('../../models', () => {
       numeroDeFuncionarios: 0,
       horaAbertura: '09:00:00',
       horaDeFechamento: '18:00:00',
-      whatsapp: '0987654321' // Adicionando o campo whatsapp
+      whatsapp: '0987654321',
+      subscription_status: 'inactive',
+      trial_end_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
     }),
   };
 });
 
 beforeEach(() => {
-  jest.clearAllMocks(); // Limpa os mocks entre os testes
-
-  User.findOne = jest.fn();
-  User.create = jest.fn();
-  User.findByPk = jest.fn();
-  Shop.findOne = jest.fn();
-  Shop.findByPk = jest.fn();
+  jest.clearAllMocks();
+  User.findOrCreate = jest.fn();
+  Shop.findOrCreate = jest.fn();
 });
 
 describe('Passport.js Google Strategy', () => {
@@ -55,99 +53,113 @@ describe('Passport.js Google Strategy', () => {
     expect(strategy._oauth2._clientSecret).toBe(process.env.GOOGLE_CLIENT_SECRET);
   });
 
-  test('deve autenticar um usuário com a função "user"', async () => {
-    const req = { query: { state: Buffer.from(JSON.stringify({ role: 'user' })).toString('base64') } };
-    const profile = {
-      id: 'google-id-123',
-      displayName: 'Test User',
-      emails: [{ value: 'user@test.com' }],
-      photos: [{ value: 'http://example.com/photo.jpg' }],
-    };
-    const done = jest.fn();
-
-    User.findOne.mockResolvedValue({ id: 1, nome: 'Test User', oauthId: 'google-id-123', whatsapp: '1234567890' });
-
-    await strategy._verify(req, null, null, profile, done);
-
-    expect(User.findOne).toHaveBeenCalledWith({ where: { oauthId: profile.id } });
-    expect(done).toHaveBeenCalledWith(null, expect.objectContaining({ nome: 'Test User', whatsapp: '1234567890' }));
-  });
-
-  test('deve criar um usuário se não for encontrado', async () => {
-    const req = { query: { state: Buffer.from(JSON.stringify({ role: 'user' })).toString('base64') } };
-    const profile = {
-      id: 'google-id-new',
-      displayName: 'New User',
-      emails: [{ value: 'newuser@test.com' }],
-      photos: [{ value: 'http://example.com/newphoto.jpg' }],
-    };
-    const done = jest.fn();
-
-    User.findOne.mockResolvedValue(null);
-    User.create.mockResolvedValue({ id: 2, nome: 'New User', oauthId: 'google-id-new', whatsapp: '' });
-
-    await strategy._verify(req, null, null, profile, done);
-
-    expect(User.create).toHaveBeenCalledWith({
-      oauthId: profile.id,
-      nome: profile.displayName,
-      email: profile.emails[0].value,
-      img: profile.photos[0].value,
-      whatsapp: '' // Adicionar o campo de WhatsApp
+  describe('Autenticação de Usuário', () => {
+    const mockProfile = (role, id) => ({
+      id: id || 'google-id-123',
+      displayName: `Test ${role}`,
+      emails: [{ value: `${role}@test.com` }],
+      photos: [{ value: 'http://example.com/photo.jpg' }]
     });
-    expect(done).toHaveBeenCalledWith(null, expect.objectContaining({ nome: 'New User', whatsapp: '' }));
+
+    test('deve autenticar um usuário existente', async () => {
+      const req = { query: { state: Buffer.from(JSON.stringify({ role: 'user' })).toString('base64') } };
+      const done = jest.fn();
+    
+      User.findOrCreate.mockResolvedValue([{ id: 1 }, true]);
+    
+      await strategy._verify(req, null, null, mockProfile('user'), done);
+      
+      expect(User.findOrCreate).toHaveBeenCalledWith({
+        where: { oauthId: mockProfile('user').id },
+        defaults: expect.objectContaining({
+          oauthId: 'google-id-123',
+          nome: 'Test user', // Ou 'Test User' dependendo da implementação real
+          email: 'user@test.com',
+          img: 'http://example.com/photo.jpg'
+        })
+      });
+      expect(done).toHaveBeenCalledWith(null, expect.anything());
+    });
+
+    test('deve criar uma nova loja com campos padrão', async () => {
+      const req = { query: { state: Buffer.from(JSON.stringify({ role: 'shop' })).toString('base64') } };
+      const done = jest.fn();
+
+      Shop.findOrCreate.mockResolvedValue([{
+        id: 2,
+        subscription_status: 'inactive',
+        trial_end_date: expect.any(Date)
+      }, true]);
+
+      await strategy._verify(req, null, null, mockProfile('shop', 'google-id-new'), done);
+      
+      expect(Shop.findOrCreate).toHaveBeenCalledWith({
+        where: { oauthId: 'google-id-new' },
+        defaults: expect.objectContaining({
+          numeroDeFuncionarios: 0,
+          subscription_status: 'inactive',
+          trial_end_date: expect.any(Date)
+        })
+      });
+      expect(done).toHaveBeenCalledWith(null, expect.objectContaining({
+        subscription_status: 'inactive'
+      }));
+    });
   });
 
-  test('deve lidar com erros durante a autenticação', async () => {
-    const req = { query: { state: Buffer.from(JSON.stringify({ role: 'user' })).toString('base64') } };
-    const profile = {
-      id: 'google-id-error',
-      displayName: 'Error User',
-      emails: [{ value: 'error@test.com' }],
-      photos: [{ value: 'http://example.com/errorphoto.jpg' }],
-    };
-    const done = jest.fn();
+  describe('Tratamento de Erros', () => {
+    test('deve lidar com state inválido', async () => {
+      const req = { query: {} };
+      const done = jest.fn();
 
-    User.findOne.mockRejectedValue(new Error('Test Error'));
+      await strategy._verify(req, null, null, {}, done);
+      expect(done).toHaveBeenCalledWith(expect.objectContaining({
+        message: 'MISSING_STATE'
+      }), false);
+    });
 
-    await strategy._verify(req, null, null, profile, done);
+    test('deve lidar com role inválido', async () => {
+      const req = { query: { state: Buffer.from(JSON.stringify({ role: 'invalid' })).toString('base64') } };
+      const done = jest.fn();
 
-    expect(done).toHaveBeenCalledWith(expect.any(Error), false);
-  });
-
-  test('deve autenticar uma loja com a função "shop"', async () => {
-    const req = { query: { state: Buffer.from(JSON.stringify({ role: 'shop' })).toString('base64') } };
-    const profile = {
-      id: 'google-id-456',
-      displayName: 'Test Shop',
-      emails: [{ value: 'shop@test.com' }],
-      photos: [{ value: 'http://example.com/photo.jpg' }],
-    };
-    const done = jest.fn();
-
-    Shop.findOne.mockResolvedValue({ id: 2, nome: 'Test Shop', oauthId: 'google-id-456', whatsapp: '0987654321' });
-
-    await strategy._verify(req, null, null, profile, done);
-
-    expect(Shop.findOne).toHaveBeenCalledWith({ where: { oauthId: profile.id } });
-    expect(done).toHaveBeenCalledWith(null, expect.objectContaining({ nome: 'Test Shop', whatsapp: '0987654321' }));
+      await strategy._verify(req, null, null, {}, done);
+      expect(done).toHaveBeenCalledWith(expect.objectContaining({
+        message: 'INVALID_ROLE'
+      }), false);
+    });
   });
 });
 
-describe('Passport.js serialization', () => {
-  test('serializeUser deve armazenar o ID do usuário', () => {
+describe('Serialização/Desserialização', () => {
+  test('deve serializar tipo e ID', () => {
     const done = jest.fn();
-    passport.serializeUser({ id: 123 }, done);
-    expect(done).toHaveBeenCalledWith(null, 123);
+    const user = { id: 1, constructor: { name: 'User' } };
+    
+    passport.serializeUser(user, done);
+    expect(done).toHaveBeenCalledWith(null, {
+      id: 1,
+      type: 'User'
+    });
   });
 
-  test('deserializeUser deve encontrar o usuário pelo ID', async () => {
+  test('deve desserializar uma loja corretamente', async () => {
+    const mockShop = { 
+      id: 2, 
+      nome: 'Test Shop',
+      subscription_status: 'inactive',
+      trial_end_date: expect.any(Date)
+    };
     const done = jest.fn();
-    User.findByPk.mockResolvedValue({ id: 123, nome: 'Test User', whatsapp: '1234567890' });
+    
+    Shop.findByPk = jest.fn().mockImplementation((id, options) => {
+      return Promise.resolve(mockShop);
+    });
 
-    await passport.deserializeUser(123, done);
-
-    expect(User.findByPk).toHaveBeenCalledWith(123);
-    expect(done).toHaveBeenCalledWith(null, expect.objectContaining({ nome: 'Test User', whatsapp: '1234567890' }));
+    await passport.deserializeUser({ id: 2, type: 'Shop' }, done);
+    
+    expect(Shop.findByPk).toHaveBeenCalledWith(2, {
+      attributes: ['id', 'nome', 'email', 'img', 'subscription_status', 'trial_end_date']
+    });
+    expect(done).toHaveBeenCalledWith(null, mockShop);
   });
 });

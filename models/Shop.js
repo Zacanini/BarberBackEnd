@@ -13,6 +13,14 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.STRING,
       allowNull: false
     },
+    email: { // <--- Coluna adicionada
+      type: DataTypes.STRING,
+      allowNull: true
+    },
+    img: { // <--- Coluna adicionada
+      type: DataTypes.TEXT,
+      allowNull: true
+    },
     numeroDeFuncionarios: {
       type: DataTypes.INTEGER,
       allowNull: false
