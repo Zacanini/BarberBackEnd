@@ -1,83 +1,145 @@
-const { Agenda, Servico } = require('../../models');
+const { Agenda, Servico, Barber } = require('../../models');
 const { Op, Sequelize } = require('sequelize');
 
+// Helper para filtro de data
+const filterByMonthYear = (mes) => ({
+  [Op.and]: [
+    Sequelize.where(Sequelize.fn('MONTH', Sequelize.col('dataMarcada')), mes),
+    Sequelize.where(Sequelize.fn('YEAR', Sequelize.col('dataMarcada')), new Date().getFullYear())
+  ]
+});
+
+// Busca otimizada com filtro centralizado
 const buscarAgendasPorBarberEMes = async (idBarber, mes) => {
-  return await Agenda.findAll({
-    where: {
-      idBarber,
-      dataMarcada: {
-        [Op.and]: [
-          Sequelize.where(Sequelize.fn('MONTH', Sequelize.col('dataMarcada')), mes),
-          Sequelize.where(Sequelize.fn('YEAR', Sequelize.col('dataMarcada')), new Date().getFullYear())
-        ]
+  try {
+    return await Agenda.findAll({
+      where: {
+        idBarber,
+        dataMarcada: filterByMonthYear(mes)
       }
-    }
-  });
+    });
+  } catch (error) {
+    console.error('Erro em buscarAgendasPorBarberEMes:', error);
+    throw error;
+  }
 };
 
+// Cálculo de variação com tratamento de erros
 const calcularVariacaoAgendas = async (idBarber) => {
-  const mesAtual = new Date().getMonth() + 1;
-  const agendasMesAtual = await buscarAgendasPorBarberEMes(idBarber, mesAtual);
-  const agendasMesAnterior = await buscarAgendasPorBarberEMes(idBarber, mesAtual - 1);
+  try {
+    if (!idBarber) throw new Error('ID do barbeiro inválido');
+    
+    const mesAtual = new Date().getMonth() + 1;
+    const [agendasMesAtual, agendasMesAnterior] = await Promise.all([
+      buscarAgendasPorBarberEMes(idBarber, mesAtual),
+      buscarAgendasPorBarberEMes(idBarber, mesAtual - 1)
+    ]);
 
-  const variacao = ((agendasMesAtual.length - agendasMesAnterior.length) / (agendasMesAnterior.length || 1)) * 100;
-  return variacao;
+    const divisor = agendasMesAnterior.length || 1;
+    return ((agendasMesAtual.length - agendasMesAnterior.length) / divisor) * 100;
+  } catch (error) {
+    console.error('Erro em calcularVariacaoAgendas:', error);
+    throw error;
+  }
 };
 
+// Consulta otimizada com agregação do banco
 const buscarServicoMaisEfetuado = async (idBarber, mes) => {
-  const agendas = await buscarAgendasPorBarberEMes(idBarber, mes);
-  const servicosContagem = {};
+  try {
+    const result = await Agenda.findOne({
+      attributes: [
+        'nomeServico',
+        [Sequelize.fn('COUNT', Sequelize.col('nomeServico')), 'total']
+      ],
+      where: { 
+        idBarber,
+        dataMarcada: filterByMonthYear(mes)
+      },
+      group: ['nomeServico'],
+      order: [[Sequelize.literal('total'), 'DESC']]
+    });
 
-  agendas.forEach(agenda => {
-    const servicoId = agenda.nomeServico; // Assumindo que nomeServico é o ID do serviço
-    servicosContagem[servicoId] = (servicosContagem[servicoId] || 0) + 1;
-  });
-
-  const servicoMaisEfetuado = Object.keys(servicosContagem).reduce((a, b) => servicosContagem[a] > servicosContagem[b] ? a : b);
-  return servicoMaisEfetuado;
+    return result?.nomeServico;
+  } catch (error) {
+    console.error('Erro em buscarServicoMaisEfetuado:', error);
+    throw error;
+  }
 };
 
+// Busca unificada usando helper
 const buscarAgendasPorShopEMes = async (idShop, mes) => {
-  return await Agenda.findAll({
-    where: {
-      idShop,
-      dataMarcada: {
-        [Op.and]: [
-          Sequelize.where(Sequelize.fn('MONTH', Sequelize.col('dataMarcada')), mes),
-          Sequelize.where(Sequelize.fn('YEAR', Sequelize.col('dataMarcada')), new Date().getFullYear())
-        ]
+  try {
+    return await Agenda.findAll({
+      where: {
+        idShop,
+        dataMarcada: filterByMonthYear(mes)
       }
-    }
-  });
+    });
+  } catch (error) {
+    console.error('Erro em buscarAgendasPorShopEMes:', error);
+    throw error;
+  }
 };
 
+// Consulta otimizada com eager loading
 const compararServicosBarbeiros = async (idShop, mes) => {
-  const barbeiros = await Barber.findAll({ where: { idShop } });
-  const contagemAgendas = {};
+  try {
+    const barbeiros = await Barber.findAll({
+      where: { idShop },
+      include: [{
+        model: Agenda,
+        where: { dataMarcada: filterByMonthYear(mes) },
+        attributes: []
+      }],
+      attributes: [
+        'id',
+        'nome',
+        [Sequelize.fn('COUNT', Sequelize.col('Agendas.id')), 'totalAgendas']
+      ],
+      group: ['Barber.id']
+    });
 
-  for (const barber of barbeiros) {
-    const agendas = await buscarAgendasPorBarberEMes(barber.id, mes);
-    contagemAgendas[barber.nome] = agendas.length;
+    return barbeiros.reduce((acc, { nome, totalAgendas }) => ({
+      ...acc,
+      [nome]: parseInt(totalAgendas)
+    }), {});
+  } catch (error) {
+    console.error('Erro em compararServicosBarbeiros:', error);
+    throw error;
   }
-
-  return contagemAgendas;
 };
 
+// Consulta agregada otimizada
 const buscarServicoMaisVendidoPorShop = async (idShop) => {
-  const servicos = await Servico.findAll({ where: { idShop } });
-  const contagemServicos = {};
+  try {
+    const result = await Agenda.findOne({
+      attributes: [
+        'nomeServico',
+        [Sequelize.fn('COUNT', Sequelize.col('nomeServico')), 'total']
+      ],
+      where: { idShop },
+      group: ['nomeServico'],
+      order: [[Sequelize.literal('total'), 'DESC']]
+    });
 
-  for (const servico of servicos) {
-    const agendas = await Agenda.findAll({ where: { idShop, nomeServico: servico.nome } });
-    contagemServicos[servico.nome] = agendas.length;
+    return result?.nomeServico;
+  } catch (error) {
+    console.error('Erro em buscarServicoMaisVendidoPorShop:', error);
+    throw error;
   }
-
-  const servicoMaisVendido = Object.keys(contagemServicos).reduce((a, b) => contagemServicos[a] > contagemServicos[b] ? a : b);
-  return servicoMaisVendido;
 };
 
+// Mantido como está (método básico)
 const buscarServicosMarcadosPorUsuario = async (idUser) => {
-  return await Agenda.findAll({ where: { idUser } });
+  try {
+    return await Agenda.findAll({ 
+      where: { idUser },
+      order: [['dataMarcada', 'DESC']]
+    });
+  } catch (error) {
+    console.error('Erro em buscarServicosMarcadosPorUsuario:', error);
+    throw error;
+  }
 };
 
 module.exports = {
