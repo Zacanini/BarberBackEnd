@@ -90,15 +90,17 @@ passport.serializeUser((user, done) => {
 });
 
 // Deserialização otimizada
+// config/passport.js
 passport.deserializeUser(async (serialized, done) => {
   try {
     const Model = serialized.type === 'User' ? User : Shop;
     const user = await Model.findByPk(serialized.id, {
       attributes: [
         'id', 
-        'oauthId', // Garantido aqui
+        'oauthId', 
         'nome', 
         'email', 
+        'img', // Adicione este campo
         'subscription_status', 
         'trial_end_date'
       ]

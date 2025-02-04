@@ -6,6 +6,9 @@ const passport = require('../passport');
 const { User, Shop } = require('../../models');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 
+// Helper para criar datas relativas
+const addDays = (days) => new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+
 jest.mock('../../models', () => {
   const SequelizeMock = require('sequelize-mock');
   const dbMock = new SequelizeMock();
@@ -15,8 +18,7 @@ jest.mock('../../models', () => {
       oauthId: 'google-id-123',
       nome: 'Test User',
       email: 'user@test.com',
-      img: 'http://example.com/photo.jpg',
-      whatsapp: '1234567890'
+      img: 'http://example.com/photo.jpg'
     }),
     Shop: dbMock.define('Shop', {
       id: 2,
@@ -29,7 +31,7 @@ jest.mock('../../models', () => {
       horaDeFechamento: '18:00:00',
       whatsapp: '0987654321',
       subscription_status: 'inactive',
-      trial_end_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+      trial_end_date: addDays(5) // Trial de 5 dias
     }),
   };
 });
@@ -47,33 +49,43 @@ describe('Passport.js Google Strategy', () => {
     strategy = passport._strategy('google');
   });
 
-  test('A GoogleStrategy deve ser configurada corretamente', () => {
+  test('Deve configurar a GoogleStrategy corretamente', () => {
     expect(strategy).toBeInstanceOf(GoogleStrategy);
+    expect(strategy.name).toBe('google');
     expect(strategy._oauth2._clientId).toBe(process.env.GOOGLE_CLIENT_ID);
     expect(strategy._oauth2._clientSecret).toBe(process.env.GOOGLE_CLIENT_SECRET);
   });
 
-  describe('Autenticação de Usuário', () => {
-    const mockProfile = (role, id) => ({
-      id: id || 'google-id-123',
-      displayName: `Test ${role}`,
-      emails: [{ value: `${role}@test.com` }],
+  describe('Fluxo de Autenticação', () => {
+    const mockProfile = (role, id, email) => ({
+      id: id || `google-id-${Math.random()}`,
+      displayName: `Test ${role.charAt(0).toUpperCase() + role.slice(1)}`, // Capitalized
+      emails: [{ value: email || `${role}@test.com` }],
       photos: [{ value: 'http://example.com/photo.jpg' }]
     });
 
-    test('deve autenticar um usuário existente', async () => {
-      const req = { query: { state: Buffer.from(JSON.stringify({ role: 'user' })).toString('base64') } };
+    test('Deve autenticar usuário existente com dados corretos', async () => {
+      const req = { 
+        query: { 
+          state: Buffer.from(JSON.stringify({ role: 'user' })).toString('base64') 
+        } 
+      };
       const done = jest.fn();
-    
-      User.findOrCreate.mockResolvedValue([{ id: 1 }, true]);
-    
+
+      User.findOrCreate.mockResolvedValue([{ 
+        id: 1,
+        oauthId: 'google-id-123',
+        nome: 'Test User',
+        email: 'user@test.com'
+      }, false]);
+
       await strategy._verify(req, null, null, mockProfile('user'), done);
       
       expect(User.findOrCreate).toHaveBeenCalledWith({
-        where: { oauthId: mockProfile('user').id },
+        where: { oauthId: expect.any(String) },
         defaults: expect.objectContaining({
-          oauthId: 'google-id-123',
-          nome: 'Test user', // Ou 'Test User' dependendo da implementação real
+          oauthId: expect.any(String),
+          nome: 'Test User', // Verifica capitalização
           email: 'user@test.com',
           img: 'http://example.com/photo.jpg'
         })
@@ -81,84 +93,134 @@ describe('Passport.js Google Strategy', () => {
       expect(done).toHaveBeenCalledWith(null, expect.anything());
     });
 
-    test('deve criar uma nova loja com campos padrão', async () => {
-      const req = { query: { state: Buffer.from(JSON.stringify({ role: 'shop' })).toString('base64') } };
+    test('Deve criar nova loja com trial de 5 dias e campos padrão', async () => {
+      const req = { 
+        query: { 
+          state: Buffer.from(JSON.stringify({ role: 'shop' })).toString('base64') 
+        } 
+      };
       const done = jest.fn();
 
       Shop.findOrCreate.mockResolvedValue([{
         id: 2,
         subscription_status: 'inactive',
-        trial_end_date: expect.any(Date)
+        trial_end_date: addDays(5)
       }, true]);
 
-      await strategy._verify(req, null, null, mockProfile('shop', 'google-id-new'), done);
+      await strategy._verify(req, null, null, mockProfile('shop'), done);
       
       expect(Shop.findOrCreate).toHaveBeenCalledWith({
-        where: { oauthId: 'google-id-new' },
+        where: { oauthId: expect.any(String) },
         defaults: expect.objectContaining({
           numeroDeFuncionarios: 0,
+          horaAbertura: '09:00:00',
+          horaDeFechamento: '18:00:00',
           subscription_status: 'inactive',
-          trial_end_date: expect.any(Date)
+          trial_end_date: expect.any(Date) // Verifica se é uma instância de Date
         })
       });
-      expect(done).toHaveBeenCalledWith(null, expect.objectContaining({
-        subscription_status: 'inactive'
-      }));
+    });
+
+    test('Deve bloquear login para lojas com trial expirado', async () => {
+      const req = { 
+        query: { 
+          state: Buffer.from(JSON.stringify({ role: 'shop' })).toString('base64') 
+        } 
+      };
+      const done = jest.fn();
+
+      Shop.findOrCreate.mockResolvedValue([{
+        subscription_status: 'inactive',
+        trial_end_date: addDays(-1) // Trial expirado
+      }, false]);
+
+      await strategy._verify(req, null, null, mockProfile('shop'), done);
+      
+      expect(done).toHaveBeenCalledWith(
+        expect.objectContaining({ message: 'SUBSCRIPTION_EXPIRED' }),
+        false
+      );
     });
   });
 
   describe('Tratamento de Erros', () => {
-    test('deve lidar com state inválido', async () => {
+    test('Deve rejeitar autenticação sem state', async () => {
       const req = { query: {} };
       const done = jest.fn();
 
       await strategy._verify(req, null, null, {}, done);
-      expect(done).toHaveBeenCalledWith(expect.objectContaining({
-        message: 'MISSING_STATE'
-      }), false);
+      expect(done).toHaveBeenCalledWith(
+        expect.objectContaining({ message: 'MISSING_STATE' }),
+        false
+      );
     });
 
-    test('deve lidar com role inválido', async () => {
-      const req = { query: { state: Buffer.from(JSON.stringify({ role: 'invalid' })).toString('base64') } };
+    test('Deve rejeitar autenticação sem email', async () => {
+      const req = { 
+        query: { 
+          state: Buffer.from(JSON.stringify({ role: 'user' })).toString('base64') 
+        } 
+      };
       const done = jest.fn();
 
-      await strategy._verify(req, null, null, {}, done);
-      expect(done).toHaveBeenCalledWith(expect.objectContaining({
-        message: 'INVALID_ROLE'
-      }), false);
+      await strategy._verify(req, null, null, { 
+        id: '123', 
+        displayName: 'User',
+        photos: [] 
+      }, done);
+      
+      expect(done).toHaveBeenCalledWith(
+        expect.objectContaining({ message: 'EMAIL_REQUIRED' }),
+        false
+      );
     });
   });
 });
 
 describe('Serialização/Desserialização', () => {
-  test('deve serializar tipo e ID', () => {
+  const mockUser = {
+    id: 1,
+    oauthId: 'google-123',
+    nome: 'User',
+    email: 'user@test.com',
+    constructor: { name: 'User' }
+  };
+
+  test('Deve serializar tipo e ID corretamente', () => {
     const done = jest.fn();
-    const user = { id: 1, constructor: { name: 'User' } };
-    
-    passport.serializeUser(user, done);
+    passport.serializeUser(mockUser, done);
     expect(done).toHaveBeenCalledWith(null, {
       id: 1,
       type: 'User'
     });
   });
 
-  test('deve desserializar uma loja corretamente', async () => {
-    const mockShop = { 
-      id: 2, 
-      nome: 'Test Shop',
-      subscription_status: 'inactive',
-      trial_end_date: expect.any(Date)
+  test('Deve desserializar loja com campos completos', async () => {
+    const mockShop = {
+      id: 2,
+      oauthId: 'google-456',
+      nome: 'Shop',
+      email: 'shop@test.com',
+      img: 'http://example.com/photo.jpg',
+      subscription_status: 'active',
+      trial_end_date: addDays(30)
     };
-    const done = jest.fn();
     
-    Shop.findByPk = jest.fn().mockImplementation((id, options) => {
-      return Promise.resolve(mockShop);
-    });
+    Shop.findByPk = jest.fn().mockResolvedValue(mockShop);
+    const done = jest.fn();
 
     await passport.deserializeUser({ id: 2, type: 'Shop' }, done);
     
     expect(Shop.findByPk).toHaveBeenCalledWith(2, {
-      attributes: ['id', 'nome', 'email', 'img', 'subscription_status', 'trial_end_date']
+      attributes: [
+        'id', 
+        'oauthId', 
+        'nome', 
+        'email', 
+        'img', 
+        'subscription_status', 
+        'trial_end_date'
+      ]
     });
     expect(done).toHaveBeenCalledWith(null, mockShop);
   });

@@ -1,7 +1,6 @@
+// authMiddleware.test.js
 const { verifyToken } = require('../../../utils/jwt');
 const authMiddleware = require('../authMiddleware');
-
-// filepath: /D:/BarbersBr/BarberBackEnd/middleware/authMiddleware.test.js
 
 jest.mock('../../../utils/jwt');
 
@@ -32,21 +31,24 @@ describe('authMiddleware', () => {
   });
 
   it('deve chamar next se o token for válido', () => {
-    const decoded = { id: 1, email: 'test@example.com' };
-    req.headers['authorization'] = 'validToken';
+    const decoded = { id: 1, email: 'test@example.com', oauthId: 'google-123' };
+    // Adicionar o prefixo Bearer conforme esperado pelo middleware
+    req.headers['authorization'] = 'Bearer validToken';
     verifyToken.mockReturnValue(decoded);
 
     authMiddleware(req, res, next);
 
+    // Verificar se o token foi extraído corretamente (parte após o Bearer)
     expect(verifyToken).toHaveBeenCalledWith('validToken');
-    expect(req.user).toBe(decoded);
+    expect(req.user).toEqual(decoded);
     expect(next).toHaveBeenCalled();
   });
 
   it('deve retornar 401 se o token for inválido', () => {
-    req.headers['authorization'] = 'invalidToken';
+    // Adicionar o prefixo Bearer conforme esperado pelo middleware
+    req.headers['authorization'] = 'Bearer invalidToken';
     verifyToken.mockImplementation(() => {
-      throw new Error('Invalid token');
+      throw new Error('Token inválido');
     });
 
     authMiddleware(req, res, next);
