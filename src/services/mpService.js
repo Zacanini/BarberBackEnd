@@ -27,15 +27,17 @@ const createPreferenceBasic = async (oauthId) => {
       installments: 3,
       excluded_payment_types: [{ id: "ticket" }],
     },
+    metadata: {
+      shop_oauth_id: oauthId,
+    },
+    external_reference: oauthId,
     back_urls: {
       success: `${process.env.URL_NGROK}/success`,
       failure: `${process.env.URL_NGROK}/failure`,
       pending: `${process.env.URL_NGROK}/pending`,
     },
     auto_return: "approved",
-    metadata: { // Adicione o oauthId como metadata
-      shop_oauth_id: oauthId,
-    },
+    
   };
 
   try {
@@ -63,15 +65,17 @@ const createPreferenceMedium = async (oauthId) => {
       installments: 6,
       excluded_payment_types: [{ id: "ticket" }],
     },
+    metadata: {
+      shop_oauth_id: oauthId,
+    },
+    external_reference: oauthId,
     back_urls: {
       success: `${process.env.URL_NGROK}/success`,
       failure: `${process.env.URL_NGROK}/failure`,
       pending: `${process.env.URL_NGROK}/pending`,
     },
     auto_return: "approved",
-    metadata: { // Adicione o oauthId como metadata
-      shop_oauth_id: oauthId,
-    },
+    
   };
 
   try {
@@ -99,15 +103,17 @@ const createPreferencePremium = async (oauthId) => {
       installments: 9,
       excluded_payment_types: [{ id: "ticket" }],
     },
+    metadata: {
+      shop_oauth_id: oauthId,
+    },
+    external_reference: oauthId,
     back_urls: {
       success: `${process.env.URL_NGROK}/success`,
       failure: `${process.env.URL_NGROK}/failure`,
       pending: `${process.env.URL_NGROK}/pending`,
     },
     auto_return: "approved",
-    metadata: { // Adicione o oauthId como metadata
-      shop_oauth_id: oauthId,
-    },
+    
   };
 
   try {
