@@ -4,9 +4,15 @@ const sequelize = require('./config/dbconfig'); // Importando a configuração d
 const passport = require('./config/passport'); // Importando a configuração do Passport
 const session = require('express-session');
 const bodyParser = require('body-parser');
+const cors = require('cors');
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3030;
 const app = express();
+app.use(cors({
+    origin: 'http://localhost:3000',
+    credentials: true
+  }));
+  
 app.use(express.json());
 app.use(session({ secret: 'secret', resave: false, saveUninitialized: false }));
 app.use(passport.initialize());
