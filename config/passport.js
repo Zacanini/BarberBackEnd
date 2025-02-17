@@ -2,7 +2,6 @@
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const { User, Shop } = require('../models');
-const { generateToken } = require('../utils/jwt'); 
 
 // Função auxiliar para decodificar e validar o state
 const decodeAndValidateState = (req) => {
@@ -12,15 +11,15 @@ const decodeAndValidateState = (req) => {
       console.error('passport.js: Estado não fornecido na requisição');
       throw new Error('MISSING_STATE');
     }
-    
+
     const decodedState = Buffer.from(req.query.state, 'base64').toString('utf8');
     const state = JSON.parse(decodedState);
-    
+
     if (!state.role || !['user', 'shop'].includes(state.role)) {
       console.error('passport.js: Role inválido ou não fornecido:', state.role);
       throw new Error('INVALID_ROLE');
     }
-    
+
     console.log('passport.js: Estado decodificado e validado com sucesso');
     return state;
   } catch (error) {
@@ -68,6 +67,8 @@ passport.use(new GoogleStrategy({
       where: { oauthId: profile.id },
       defaults: { ...baseData, ...shopData }
     });
+    // Adiciona a role ao objeto do usuário
+    user.role = role;
 
     // Verifique se o trial acabou ou se a assinatura está ativa
     if (role === 'shop') {
@@ -105,16 +106,16 @@ passport.deserializeUser(async (serialized, done) => {
     const Model = serialized.type === 'User' ? User : Shop;
     const user = await Model.findByPk(serialized.id, {
       attributes: [
-        'id', 
-        'oauthId', 
-        'nome', 
-        'email', 
+        'id',
+        'oauthId',
+        'nome',
+        'email',
         'img', // Adicione este campo
-        'subscription_status', 
+        'subscription_status',
         'trial_end_date'
       ]
     });
-    
+
     console.log('passport.js: Usuário deserializado com sucesso');
     done(null, user || false);
   } catch (error) {

@@ -6,7 +6,8 @@ const generateToken = (user) => {
   const token = jwt.sign({ 
     id: user.id, 
     email: user.email,
-    oauthId: user.oauthId // Adicione o oauthId aqui
+    oauthId: user.oauthId,
+    role: user.role // 🆕 Adicione esta linha
   }, process.env.JWT_SECRET, { expiresIn: '1h' });
   console.log('jwt.js: Token JWT gerado com sucesso');
   return token;
