@@ -112,7 +112,9 @@ passport.deserializeUser(async (serialized, done) => {
         'email',
         'img', // Adicione este campo
         'subscription_status',
-        'trial_end_date'
+        'trial_end_date',
+        'localizacao', // Adicione este campo
+        'informacoes'  // Adicione este campo
       ]
     });
 

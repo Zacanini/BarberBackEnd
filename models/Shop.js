@@ -59,6 +59,16 @@ module.exports = (sequelize, DataTypes) => {
     trial_end_date: {
       type: DataTypes.DATE,
       defaultValue: null
+    },
+    localizacao: { // Nova coluna
+      type: DataTypes.STRING,
+      allowNull: true,
+      defaultValue: ''
+    },
+    informacoes: { // Nova coluna
+      type: DataTypes.TEXT,
+      allowNull: true,
+      defaultValue: ''
     }
   }, {});
   Shop.associate = function(models) {
