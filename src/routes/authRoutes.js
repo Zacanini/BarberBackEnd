@@ -68,7 +68,7 @@ router.get('/auth/success', (req, res) => {
   console.log('authRoutes.js: Cookie authToken definido com sucesso');
 
   // Redireciona para o frontend
-  res.redirect('http://localhost:3000/login-success');
+  res.redirect('http://localhost:3000/pages/login-success');
   console.log('authRoutes.js: Redirecionando para http://localhost:3000/login-success');
 });
 
@@ -95,7 +95,7 @@ router.get('/logout', (req, res) => {
     console.log('authRoutes.js: Cookie authToken removido com sucesso');
     
     // Redireciona
-    res.redirect('http://localhost:3000/signin');
+    res.redirect('http://localhost:3000/pages/signin');
   });
 });
 

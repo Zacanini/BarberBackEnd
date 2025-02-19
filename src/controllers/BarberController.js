@@ -2,8 +2,9 @@ const barberService = require('../services/BarberService');
 
 const criarBarber = async (req, res) => {
   try {
-    const barber = await barberService.createBarber(req.body);
-    res.status(201).json(barber);
+    const { barber, senhaNaoCriptografada } = await barberService.createBarber(req.body);
+    // Envie a senha não criptografada na resposta (apenas para criação)
+    res.status(201).json({ ...barber, senhaNaoCriptografada });
   } catch (error) {
     res.status(500).json({ mensagem: 'Erro ao criar o barbeiro', erro: error.message });
   }
