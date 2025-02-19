@@ -31,6 +31,15 @@ const obterServicoPorId = async (req, res) => {
   }
 };
 
+const obterServicosPorShopId = async (req, res) => {
+  try {
+    const servicos = await servicoService.getServicosByShopId(req.params.idShop);
+    res.status(200).json(servicos);
+  } catch (error) {
+    res.status(500).json({ mensagem: 'Erro ao obter serviços do shop', erro: error.message });
+  }
+};
+
 const atualizarServico = async (req, res) => {
   try {
     const servico = await servicoService.updateServico(req.params.id, req.body);
@@ -62,5 +71,6 @@ module.exports = {
   listarServicos,
   obterServicoPorId,
   atualizarServico,
-  deletarServico
+  deletarServico,
+  obterServicosPorShopId
 };

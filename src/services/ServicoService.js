@@ -12,6 +12,12 @@ const getServicoById = async (id) => {
   return await Servico.findByPk(id);
 };
 
+const getServicosByShopId = async (idShop) => {
+  return await Servico.findAll({
+    where: { idShop }
+  });
+};
+
 const updateServico = async (id, data) => {
   const servico = await Servico.findByPk(id);
   if (servico) {
@@ -34,5 +40,6 @@ module.exports = {
   getAllServicos,
   getServicoById,
   updateServico,
-  deleteServico
+  deleteServico,
+  getServicosByShopId
 };
