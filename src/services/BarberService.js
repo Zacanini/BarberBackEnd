@@ -67,5 +67,6 @@ module.exports = {
   getAllBarbers,
   getBarberById,
   updateBarber,
-  deleteBarber
+  deleteBarber,
+  getBarbersByShopId,
 };

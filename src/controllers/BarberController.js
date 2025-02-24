@@ -1,4 +1,5 @@
 const barberService = require('../services/BarberService');
+const { Barber } = require('../../models');
 
 const criarBarber = async (req, res) => {
   try {
@@ -29,6 +30,15 @@ const obterBarberPorId = async (req, res) => {
     }
   } catch (error) {
     res.status(500).json({ mensagem: 'Erro ao obter o barbeiro', erro: error.message });
+  }
+};
+
+const obterBarbersPorIdShop = async (req, res) => {
+  try {
+    const barbers = await barberService.getBarbersByShopId(req.params.idShop);
+    res.status(200).json(barbers);
+  } catch (error) {
+    res.status(500).json({ mensagem: 'Erro ao buscar barbeiros', erro: error.message });
   }
 };
 
@@ -63,5 +73,7 @@ module.exports = {
   listarBarbers,
   obterBarberPorId,
   atualizarBarber,
-  deletarBarber
+  deletarBarber,
+  obterBarbersPorIdShop,
+  verificarSenhaBarber
 };
