@@ -74,6 +74,5 @@ module.exports = {
   obterBarberPorId,
   atualizarBarber,
   deletarBarber,
-  obterBarbersPorIdShop,
-  verificarSenhaBarber
+  obterBarbersPorIdShop
 };

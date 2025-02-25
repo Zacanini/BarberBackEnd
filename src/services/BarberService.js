@@ -62,6 +62,14 @@ const deleteBarber = async (id) => {
   return false;
 };
 
+const getBarbersByShopId = async (idShop) => {
+  return await Barber.findAll({
+    where: {
+      idShop: idShop
+    }
+  });
+};
+
 module.exports = {
   createBarber,
   getAllBarbers,
