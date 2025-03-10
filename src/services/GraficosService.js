@@ -1,13 +1,21 @@
 const { Agenda, Servico, Barber } = require('../../models');
 const { Op, Sequelize } = require('sequelize');
 
-// Helper para filtro de data
+// Helper para filtro de data adaptado para PostgreSQL
 const filterByMonthYear = (mes) => ({
   [Op.and]: [
-    Sequelize.where(Sequelize.fn('MONTH', Sequelize.col('dataMarcada')), mes),
-    Sequelize.where(Sequelize.fn('YEAR', Sequelize.col('dataMarcada')), new Date().getFullYear())
+    Sequelize.where(Sequelize.fn('EXTRACT', Sequelize.literal('MONTH FROM "dataMarcada"')), mes),
+    Sequelize.where(Sequelize.fn('EXTRACT', Sequelize.literal('YEAR FROM "dataMarcada"')), new Date().getFullYear())
   ]
 });
+
+// Alternativa usando date_part (também funciona no PostgreSQL)
+// const filterByMonthYear = (mes) => ({
+//   [Op.and]: [
+//     Sequelize.where(Sequelize.fn('date_part', 'month', Sequelize.col('dataMarcada')), mes),
+//     Sequelize.where(Sequelize.fn('date_part', 'year', Sequelize.col('dataMarcada')), new Date().getFullYear())
+//   ]
+// });
 
 // Busca otimizada com filtro centralizado
 const buscarAgendasPorBarberEMes = async (idBarber, mes) => {
@@ -81,7 +89,7 @@ const buscarAgendasPorShopEMes = async (idShop, mes) => {
   }
 };
 
-// Consulta otimizada com eager loading
+// Consulta otimizada com eager loading (adaptada para PostgreSQL)
 const compararServicosBarbeiros = async (idShop, mes) => {
   try {
     const barbeiros = await Barber.findAll({

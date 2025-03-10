@@ -1,4 +1,4 @@
-const { GraficosService } = require('../services/GraficosService');
+const  GraficosService  = require('../services/GraficosService');
 
 const getAgendasPorBarberEMes = async (req, res) => {
   const { id, mes } = req.params;
